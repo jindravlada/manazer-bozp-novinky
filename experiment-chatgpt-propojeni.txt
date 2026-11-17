@@ -1,0 +1,4 @@
+Test propojení ChatGPT ↔ GitHub
+Datum: 2026-11-17
+Účel: ověřit zápis souboru z interaktivního rozhovoru.
+Tento soubor není přehled BOZP a není součástí publikovaného kanálu.
