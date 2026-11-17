@@ -1,0 +1,26 @@
+{
+  "format": "manazer-bozp-novinky-index",
+  "format_version": 1,
+  "feed": "manazer-bozp-novinky",
+  "sequence": 1,
+  "issued_at": "2026-11-16",
+  "expires_at": "2027-02-14",
+  "reviews": [
+    {
+      "id": "2026-W45",
+      "issued_at": "2026-11-09",
+      "period_start": "2026-11-02",
+      "period_end": "2026-11-08",
+      "file": "prehledy/2026-W45.json",
+      "sha256": "e103b0fccffd4996936696b34737032d6476fa39fb0066eb8117ebab36216b24"
+    },
+    {
+      "id": "2026-W46",
+      "issued_at": "2026-11-16",
+      "period_start": "2026-11-09",
+      "period_end": "2026-11-15",
+      "file": "prehledy/2026-W46.json",
+      "sha256": "ee09bef9d61ed9fc1f2afd23f07d1913bbe2656baf435b370294f601057204b3"
+    }
+  ]
+}

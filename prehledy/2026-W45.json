@@ -1,0 +1,14 @@
+{
+  "format": "manazer-bozp-novinky-prehled",
+  "format_version": 1,
+  "id": "2026-W45",
+  "issued_at": "2026-11-09",
+  "period": {
+    "start": "2026-11-02",
+    "end": "2026-11-08"
+  },
+  "status": "bez_podstatnych_novinek",
+  "summary": "Ve sledovaném období nebyly zjištěny žádné podstatné novinky. Jde o fiktivní zkušební záznam, ne o skutečné zjištění.",
+  "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "items": []
+}
