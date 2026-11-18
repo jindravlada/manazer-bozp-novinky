@@ -1,0 +1,91 @@
+name: Zveřejnit ověřený přehled
+
+# Pondělí 9:15 až 17:15 v Europe/Prague. Minuta 15 snižuje riziko,
+# že GitHub úlohu na začátku hodiny zahodí. Chybějící přehled nic nezmění
+# a další hodina ho zkusí znovu. Neplatný přehled se nezveřejní.
+on:
+  schedule:
+    - cron: "15 9-17 * * 1"
+      timezone: Europe/Prague
+
+permissions:
+  contents: read
+
+concurrency:
+  group: novinky-zverejneni-overeneho
+  cancel-in-progress: false
+
+jobs:
+  zverejnit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prijem-cteni
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      publikovano: ${{ steps.zapis.outputs.publikovano }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Ověřit příjem a zapsat jen platný přehled
+        env:
+          PRIJEM_READ_TOKEN: ${{ secrets.PRIJEM_READ_TOKEN }}
+        run: python3 nastroje/zverejni_vzdaleny_prijem.py
+
+      - name: Zapsat zveřejnění do main
+        id: zapis
+        run: |
+          set -euo pipefail
+          plan="$(python3 -c 'import subprocess, sys; sys.path.insert(0, "nastroje"); import zverejni_vzdaleny_prijem as job; print(job.classify_worktree(subprocess.check_output(["git", "status", "--porcelain"], text=True).splitlines()))')"
+          if [ "$plan" = "beze_zmeny" ]; then
+            echo "publikovano=ne" >> "$GITHUB_OUTPUT"
+            echo "beze_zmeny"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "index.json" "prehledy/${plan}.json"
+          got="$(git diff --cached --name-only | sort)"
+          want="$(printf 'index.json\nprehledy/%s.json\n' "$plan" | sort)"
+          if [ "$got" != "$want" ]; then
+            echo "odmitnuto zapis"
+            exit 1
+          fi
+          git commit -m "Zveřejni ověřený přehled ${plan}."
+          git fetch origin main
+          if [ "$(git rev-parse HEAD^)" != "$(git rev-parse origin/main)" ]; then
+            echo "odmitnuto soubezna_zmena"
+            exit 1
+          fi
+          git push --ff-only origin HEAD:main
+          mkdir -p "$RUNNER_TEMP/site/prehledy"
+          cp -- index.json index.html .nojekyll "$RUNNER_TEMP/site/"
+          cp -- prehledy/*.json "$RUNNER_TEMP/site/prehledy/"
+          echo "publikovano=ano" >> "$GITHUB_OUTPUT"
+
+      - name: Nahrát web
+        if: steps.zapis.outputs.publikovano == 'ano'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: ${{ runner.temp }}/site
+
+  nasadit:
+    needs: zverejnit
+    if: needs.zverejnit.outputs.publikovano == 'ano'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Nasadit GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
