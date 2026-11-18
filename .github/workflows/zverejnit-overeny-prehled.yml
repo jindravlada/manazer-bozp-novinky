@@ -1,9 +1,15 @@
 name: Zveřejnit ověřený přehled
 
-# Ruční zkouška. Pondělní plán se doplní až po ověření, že chybějící
-# přehled nic nezveřejní. Neplatný přehled se nezveřejní.
+# Pondělí 9:15 až 17:15 v Europe/Prague. Stejný místní čas platí v zimě
+# i v létě; přechod času je v neděli, takže pondělní hodina 9 nepadá
+# do přeskočené ani opakované hodiny. Minuta 15 snižuje riziko, že
+# GitHub úlohu na začátku hodiny zahodí. Chybějící přehled nic nezmění
+# a další hodina ho zkusí znovu. Neplatný přehled se nezveřejní.
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "15 9-17 * * 1"
+      timezone: Europe/Prague
 
 permissions:
   contents: read
