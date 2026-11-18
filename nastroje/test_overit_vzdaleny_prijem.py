@@ -106,6 +106,43 @@ def test_bytes() -> bytes:
     return json.dumps(test_payload(), ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
 
 
+def finished_week(**changes: object) -> dict:
+    title = "Zkušební položka"
+    text = "Zkušební text položky. Není to odborné zjištění."
+    practical = "zkušební význam položky."
+    recommendation = "zkušební doporučení položky."
+    url = "https://invalid.test/novinky/1"
+    markdown = "\n\n".join((title, text, practical, recommendation, url))
+    document = {
+        "format": "manazer-bozp-novinky-prehled",
+        "format_version": 1,
+        "id": "2026-W47",
+        "issued_at": "2026-11-23",
+        "period": {"start": "2026-11-16", "end": "2026-11-22"},
+        "status": "novinky",
+        "ai_notice": checks.AI_NOTICE,
+        "content_markdown": markdown,
+        "items": [
+            {
+                "id": "2026-W47-001",
+                "category": "ostatni",
+                "title": title,
+                "text": text,
+                "source": {
+                    "name": "Zkušební zdroj",
+                    "url": url,
+                    "published_at": "2026-11-18",
+                },
+                "effective_at": None,
+                "practical_meaning": practical,
+                "recommendation": recommendation,
+            }
+        ],
+    }
+    document.update(changes)
+    return document
+
+
 def github_file(raw: bytes, path: str, claimed_sha: str = "sha-ze-serveru") -> bytes:
     return json.dumps(
         {
@@ -222,6 +259,41 @@ class SeparatedIntakeTests(unittest.TestCase):
         self.assertEqual(
             remote.check_bytes(self.channel, b"{" + b"x" * checks.MAX_DOCUMENT, "2026-W47")[1],
             "odmitnuto nadmerne",
+        )
+
+    def test_finished_week_requires_original_text_and_known_category(self):
+        code, line = remote.check_bytes(
+            self.channel, dump(finished_week()), "2026-W47", today=ACCEPTED_DAY
+        )
+        self.assertEqual((code, line), (0, "overeno 2026-W47 polozek 1 nepublikovano"))
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
+        missing = finished_week()
+        del missing["content_markdown"]
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(missing), "2026-W47", today=ACCEPTED_DAY)[1],
+            "odmitnuto chybi_puvodni_text",
+        )
+        unknown = finished_week()
+        unknown["items"][0]["category"] = "neznama_kategorie"
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(unknown), "2026-W47", today=ACCEPTED_DAY)[1],
+            "odmitnuto kategorie",
+        )
+        shifted = finished_week()
+        shifted["period"] = {"start": "2026-11-17", "end": "2026-11-22"}
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(shifted), "2026-W47", today=ACCEPTED_DAY)[1],
+            "odmitnuto nesoulad_obdobi",
+        )
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(finished_week()), "2026-W47", today=REAL_DAY)[1],
+            "odmitnuto budouci_datum",
+        )
+        drifted = finished_week()
+        drifted["items"][0]["title"] = "Jiný název"
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(drifted), "2026-W47", today=ACCEPTED_DAY)[1],
+            "odmitnuto nesoulad_textu",
         )
 
     def test_production_conversion_rejects_every_test_flag(self):

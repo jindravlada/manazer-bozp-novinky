@@ -95,15 +95,30 @@ def processing_date() -> date:
 
 
 def examine(raw: bytes, *, today: date | None = None) -> dict:
-    """Převede produkční obálku a ověří ji. Do souborů nic nezapisuje."""
+    """Ověří přenosovou obálku nebo hotový týdenní přehled. Do souborů nic nezapisuje."""
     if len(raw) > MAX_DOCUMENT:
         raise CheckError("nadměrný přehled")
     payload = _parse_json(raw)
+    if type(payload) is dict and "distribution_test" in payload:
+        raise CheckError("testovaci prehled nelze publikovat")
+    if type(payload) is dict and "format" in payload:
+        if "experiment" in payload:
+            raise CheckError("neznámý druh předaného přehledu")
+        return _examine_finished_week(payload, today=_resolve_today(today))
     document = convert_transfer(payload, today=today)
     if document.get("content_markdown") != payload["content_markdown"]:
         raise CheckError("původní text se při převodu změnil")
     _verify_loaded(document)
     return document
+
+
+def _examine_finished_week(payload: dict, *, today: date) -> dict:
+    """Přijme hotový týdenní JSON jen spolu s původním úplným textem."""
+    if "content_markdown" not in payload or type(payload.get("content_markdown")) is not str or payload["content_markdown"].strip() == "":
+        raise CheckError("chybí původní text přehledu")
+    _require_not_future(payload.get("issued_at"), today, field="issued_at")
+    _verify_loaded(payload)
+    return payload
 
 
 def assess_distribution_test(raw: bytes, *, today: date | None = None) -> ReadVerdict:
@@ -547,8 +562,8 @@ def _resolve_today(today: date | None) -> date:
     return processing_date()
 
 
-def _require_not_future(value: object, today: date) -> None:
-    issued = _date(value, "source_run_date")
+def _require_not_future(value: object, today: date, field: str = "source_run_date") -> None:
+    issued = _date(value, field)
     if issued > today:
         raise CheckError("datum přehledu je v budoucnosti")
 

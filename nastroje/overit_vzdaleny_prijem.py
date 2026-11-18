@@ -57,6 +57,9 @@ EXACT_REASONS = {
     "testovaci prehled nelze publikovat": "testovaci",
     "neplatný příznak testu": "testovaci",
     "datum přehledu je v budoucnosti": "budouci_datum",
+    "chybí původní text přehledu": "chybi_puvodni_text",
+    "neznámá kategorie": "kategorie",
+    "strukturovaný text není v původním přehledu": "nesoulad_textu",
     "neplatné zkušební datum": "datum",
 }
 
