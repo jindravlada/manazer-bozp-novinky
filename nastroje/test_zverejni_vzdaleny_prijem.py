@@ -166,8 +166,8 @@ class RemotePublishTests(unittest.TestCase):
         with self.assertRaises(publisher.PublishError):
             job.classify_worktree([" M prehledy/2026-W45.json", "?? prehledy/2026-W47.json"])
         text = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn('cron: "15 9-17 * * 1"', text)
-        self.assertIn("timezone: Europe/Prague", text)
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("schedule:", text)
         self.assertIn("environment: prijem-cteni", text)
         self.assertEqual(text.count("secrets.PRIJEM_READ_TOKEN"), 1)
         self.assertEqual(text.count("contents: write"), 1)
@@ -177,7 +177,6 @@ class RemotePublishTests(unittest.TestCase):
         self.assertNotIn("generuj_prehled", text)
         self.assertNotIn("--force", text)
         self.assertNotIn("rebase", text)
-        self.assertNotIn("workflow_dispatch", text)
         source = SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("generuj_prehled", source)
         self.assertNotIn("github_pat_", source)
