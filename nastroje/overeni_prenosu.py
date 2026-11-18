@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import unicodedata
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 FORMAT_INDEX = "manazer-bozp-novinky-index"
 FORMAT_REVIEW = "manazer-bozp-novinky-prehled"
@@ -49,6 +51,7 @@ ENVELOPE_KEYS = {
     "content_markdown",
 }
 EXPERIMENT_ID = "chatgpt-automation-transfer"
+PRAGUE = ZoneInfo("Europe/Prague")
 NUMBERED_HEADING = re.compile(r"^(\d+)\. (.+)$")
 MARKDOWN_LINK = re.compile(r"\[([^\]]+)\]\((https://[^)\s]+)\)")
 CZECH_DATE = re.compile(r"(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})")
@@ -61,29 +64,64 @@ class CheckError(Exception):
     """Přehled nelze bezpečně převzít."""
 
 
+class ReadVerdict:
+    """Výsledek čtení. Zkušební přehled nelze označit jako publikovatelný."""
+
+    def __init__(self, week_id: str, item_count: int, publishable: bool) -> None:
+        if publishable:
+            raise CheckError("testovaci prehled nelze publikovat")
+        self.week_id = week_id
+        self.item_count = item_count
+        self.publishable = False
+
+
 def parse_json(data: bytes) -> object:
     return _parse_json(data)
 
 
-def examine(raw: bytes) -> dict:
-    """Převede obálku a ověří ji. Do souborů nic nezapisuje."""
+def processing_date() -> date:
+    """Pražské datum zpracování. V Actions ignoruje zkušební posun času."""
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return _prague_today()
+    override = os.environ.get("NOVINKY_TEST_TODAY", "").strip()
+    if not override:
+        return _prague_today()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", override):
+        raise CheckError("neplatné zkušební datum")
+    try:
+        return date.fromisoformat(override)
+    except ValueError:
+        raise CheckError("neplatné zkušební datum") from None
+
+
+def examine(raw: bytes, *, today: date | None = None) -> dict:
+    """Převede produkční obálku a ověří ji. Do souborů nic nezapisuje."""
     if len(raw) > MAX_DOCUMENT:
         raise CheckError("nadměrný přehled")
     payload = _parse_json(raw)
-    document = convert_transfer(payload)
+    document = convert_transfer(payload, today=today)
     if document.get("content_markdown") != payload["content_markdown"]:
         raise CheckError("původní text se při převodu změnil")
-    raw_review = _dump(document)
-    _verify_review(
-        raw_review,
-        {
-            "id": document["id"],
-            "issued_at": document["issued_at"],
-            "period_start": document["period"]["start"],
-            "period_end": document["period"]["end"],
-        },
-    )
+    _verify_loaded(document)
     return document
+
+
+def assess_distribution_test(raw: bytes, *, today: date | None = None) -> ReadVerdict:
+    """Ověří zkušební obálku. Výsledek je vždy nepublikovatelný."""
+    if len(raw) > MAX_DOCUMENT:
+        raise CheckError("nadměrný přehled")
+    payload = _parse_json(raw)
+    if type(payload) is not dict or payload.get("distribution_test") is not True:
+        raise CheckError("neplatný příznak testu")
+    if set(payload) != set(ENVELOPE_KEYS) | {"distribution_test"}:
+        raise CheckError("neplatný příznak testu")
+    body = {key: payload[key] for key in ENVELOPE_KEYS}
+    document = _convert_envelope(body)
+    if document.get("content_markdown") != body["content_markdown"]:
+        raise CheckError("původní text se při převodu změnil")
+    _require_not_future(body["source_run_date"], _resolve_today(today))
+    _verify_loaded(document)
+    return ReadVerdict(document["id"], len(document["items"]), False)
 
 
 def published_ids(root: Path) -> list[str]:
@@ -117,7 +155,16 @@ def expected_week(root: Path) -> str:
     return week_id
 
 
-def convert_transfer(payload: object) -> dict:
+def convert_transfer(payload: object, *, today: date | None = None) -> dict:
+    """Sestaví produkční dokument. Jakýkoli testovací příznak odmítne."""
+    if type(payload) is dict and "distribution_test" in payload:
+        raise CheckError("testovaci prehled nelze publikovat")
+    document = _convert_envelope(payload)
+    _require_not_future(document["issued_at"], _resolve_today(today))
+    return document
+
+
+def _convert_envelope(payload: object) -> dict:
     """Sestaví týdenní dokument. Původní markdown nemění."""
     document = _expect(payload, ENVELOPE_KEYS)
     if document["experiment"] != EXPERIMENT_ID:
@@ -486,6 +533,37 @@ def _require_projection(item: dict, markdown: str) -> None:
             fragment = fragment[len("Stav: "):].strip()
         if fragment and fragment not in markdown:
             raise CheckError("text položky není v původním přehledu")
+
+
+def _prague_today() -> date:
+    return datetime.now(PRAGUE).date()
+
+
+def _resolve_today(today: date | None) -> date:
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return _prague_today()
+    if today is not None:
+        return today
+    return processing_date()
+
+
+def _require_not_future(value: object, today: date) -> None:
+    issued = _date(value, "source_run_date")
+    if issued > today:
+        raise CheckError("datum přehledu je v budoucnosti")
+
+
+def _verify_loaded(document: dict) -> None:
+    raw_review = _dump(document)
+    _verify_review(
+        raw_review,
+        {
+            "id": document["id"],
+            "issued_at": document["issued_at"],
+            "period_start": document["period"]["start"],
+            "period_end": document["period"]["end"],
+        },
+    )
 
 
 def _date(value: object, field: str) -> date:

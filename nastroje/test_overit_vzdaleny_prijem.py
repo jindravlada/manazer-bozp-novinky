@@ -24,6 +24,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "nastroje" / "overit_vzdaleny_prijem.py"
 VALIDATOR = ROOT / "nastroje" / "overeni_prenosu.py"
 WORKFLOW = ROOT / ".github" / "workflows" / "overit-vzdaleny-prijem.yml"
+TEST_WORKFLOW = ROOT / ".github" / "workflows" / "overit-zkousku-prijmu.yml"
+ACCEPTED_DAY = date(2026, 11, 23)
+REAL_DAY = date(2026, 11, 18)
 TOKEN = "github_pat_lokalni_zkouska"
 CANARY = "SOUKROMY_TEXT_NEVYPISOVAT"
 PUBLISHED = {
@@ -70,14 +73,48 @@ def dump(document: dict) -> bytes:
     return json.dumps(document, ensure_ascii=False).encode("utf-8")
 
 
-def github_file(raw: bytes, week_id: str) -> bytes:
+def test_markdown() -> str:
+    return (
+        "### 1. Zkušební fiktivní položka\n\n"
+        "- **Stav:** zkušební položka bez odborného významu\n"
+        "- **Zveřejněno:** 18. 11. 2026.\n"
+        "- **Účinnost:** není relevantní.\n"
+        "- **Zdroj:** [Zkušební zdroj](https://invalid.test/novinky/fiktivni-zkouska-nepublikovat).\n\n"
+        "Toto není právní informace ani zpráva o skutečném předpisu. Slouží jen ke zkoušce přenosu.\n\n"
+        "**Praktický význam:** Zkušební význam bez dopadu na praxi.\n\n"
+        "**Manažer BOZP – návrh k posouzení:** Nezveřejňovat. FIKTIVNI_ZKOUSKA_NEPUBLIKOVAT"
+    )
+
+
+def test_payload(**changes: object) -> dict:
+    document = {
+        "experiment": "chatgpt-automation-transfer",
+        "production_trusted": False,
+        "id": "2026-W47",
+        "source_task": "FIKTIVNI_ZKOUSKA_NEPUBLIKOVAT",
+        "source_run_date": "2026-11-23",
+        "period_start": "2026-11-16",
+        "period_end": "2026-11-22",
+        "distribution_test": True,
+        "content_markdown": test_markdown(),
+    }
+    document.update(changes)
+    return document
+
+
+def test_bytes() -> bytes:
+    return json.dumps(test_payload(), ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
+
+
+def github_file(raw: bytes, path: str, claimed_sha: str = "sha-ze-serveru") -> bytes:
     return json.dumps(
         {
             "type": "file",
             "encoding": "base64",
             "size": len(raw),
             "content": base64.b64encode(raw).decode("ascii"),
-            "path": f"prijem/{week_id}.json",
+            "path": path,
+            "sha": claimed_sha,
             "url": "https://api.github.com/ignored",
         }
     ).encode("utf-8")
@@ -159,22 +196,117 @@ class SeparatedIntakeTests(unittest.TestCase):
         self.assertEqual(checks.expected_week(self.channel), "2026-W47")
 
     def test_valid_review_is_not_published(self):
-        code, line = remote.check_bytes(self.channel, dump(envelope("2026-W47")), "2026-W47")
+        code, line = remote.check_bytes(
+            self.channel, dump(envelope("2026-W47")), "2026-W47", today=ACCEPTED_DAY
+        )
         self.assertEqual((code, line), (0, "overeno 2026-W47 polozek 1 nepublikovano"))
         self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
 
     def test_invalid_structure_danger_wrong_week_and_size(self):
         missing = envelope("2026-W47")
         del missing["id"]
-        self.assertEqual(remote.check_bytes(self.channel, dump(missing), "2026-W47")[1], "odmitnuto chybejici_nebo_navic")
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(missing), "2026-W47", today=ACCEPTED_DAY)[1],
+            "odmitnuto chybejici_nebo_navic",
+        )
         dangerous = envelope("2026-W47")
         dangerous["content_markdown"] += "\n<script>alert(1)</script>"
-        self.assertEqual(remote.check_bytes(self.channel, dump(dangerous), "2026-W47")[1], "odmitnuto nebezpecny_obsah")
-        self.assertEqual(remote.check_bytes(self.channel, dump(envelope("2026-W48")), "2026-W47")[1], "odmitnuto nespravny_tyden")
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(dangerous), "2026-W47", today=ACCEPTED_DAY)[1],
+            "odmitnuto nebezpecny_obsah",
+        )
+        self.assertEqual(
+            remote.check_bytes(self.channel, dump(envelope("2026-W48")), "2026-W47", today=date(2026, 11, 30))[1],
+            "odmitnuto nespravny_tyden",
+        )
         self.assertEqual(
             remote.check_bytes(self.channel, b"{" + b"x" * checks.MAX_DOCUMENT, "2026-W47")[1],
             "odmitnuto nadmerne",
         )
+
+    def test_production_conversion_rejects_every_test_flag(self):
+        for value in (True, False, "true", 1):
+            with self.assertRaises(checks.CheckError) as caught:
+                checks.convert_transfer(test_payload(distribution_test=value))
+            self.assertEqual(str(caught.exception), "testovaci prehled nelze publikovat")
+        code, line = remote.check_bytes(self.channel, test_bytes(), "2026-W47", today=ACCEPTED_DAY)
+        self.assertEqual(line, "odmitnuto testovaci")
+        self.assertEqual(code, 1)
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
+
+    def test_distribution_test_is_not_publishable_and_honors_clock(self):
+        self.assertEqual(hashlib.sha256(test_bytes()).hexdigest(), remote.TEST_SHA256)
+        verdict = checks.assess_distribution_test(test_bytes(), today=ACCEPTED_DAY)
+        self.assertFalse(verdict.publishable)
+        self.assertEqual(verdict.week_id, "2026-W47")
+        self.assertEqual(verdict.item_count, 1)
+        with self.assertRaises(checks.CheckError) as caught:
+            checks.ReadVerdict("2026-W47", 1, True)
+        self.assertEqual(str(caught.exception), "testovaci prehled nelze publikovat")
+        with self.assertRaises(checks.CheckError) as future:
+            checks.assess_distribution_test(test_bytes(), today=REAL_DAY)
+        self.assertEqual(str(future.exception), "datum přehledu je v budoucnosti")
+        code, line = remote.check_test_bytes(self.channel, test_bytes(), today=ACCEPTED_DAY)
+        self.assertEqual((code, line), (0, "overeno 2026-W47 polozek 1 nepublikovano"))
+        self.assertEqual(
+            remote.check_test_bytes(self.channel, test_bytes(), today=REAL_DAY)[1],
+            "odmitnuto budouci_datum",
+        )
+        mutated = test_bytes().replace("Zkušební".encode(), b"CANARYTEXT")
+        self.assertEqual(remote.check_test_bytes(self.channel, mutated, today=ACCEPTED_DAY)[1], "odmitnuto neocekavany_obsah")
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
+
+    def test_spaces_stay_fixed_and_actions_ignore_clock(self):
+        base = "http://127.0.0.1:9"
+        production = remote.document_url(base, "2026-W47")
+        trial = remote.test_document_url(base)
+        self.assertTrue(production.endswith("/contents/prijem/2026-W47.json?ref=main"))
+        self.assertNotIn("zkouska", production)
+        self.assertTrue(trial.endswith("/contents/zkouska/2026-W47.json?ref=zkouska-cteni"))
+        self.assertEqual(remote.selected_space([]), "prijem")
+        self.assertEqual(remote.selected_space(["--zkouska"]), "zkouska")
+        with self.assertRaises(remote.RemoteReject):
+            remote.selected_space(["--zkouska", "--publikovat"])
+        with self.assertRaises(remote.RemoteReject):
+            remote.selected_space(["--ref", "zkouska-cteni"])
+        self.assertNotIn("potvrdit", SCRIPT.read_text(encoding="utf-8"))
+        path = "/repos/jindravlada/manazer-bozp-prijem/contents/zkouska/2026-W47.json?ref=zkouska-cteni"
+        body = github_file(test_bytes(), "zkouska/2026-W47.json", claimed_sha="jiný-otisk-ze-serveru")
+        code, output, seen = _serve({path: (200, body)}, argv=["--zkouska"], controlled_date="2026-11-23")
+        self.assertEqual(output.strip(), "overeno 2026-W47 polozek 1 nepublikovano")
+        self.assertEqual(seen, [path])
+        self.assertNotIn("FIKTIVNI_ZKOUSKA_NEPUBLIKOVAT", output)
+        self.assertNotIn("jiný-otisk-ze-serveru", output)
+        wrong = github_file(test_bytes(), "prijem/2026-W47.json")
+        code, output, _seen = _serve({path: (200, wrong)}, argv=["--zkouska"], controlled_date="2026-11-23")
+        self.assertEqual(output.strip(), "odmitnuto cesta")
+        altered = github_file(test_bytes() + b" ", "zkouska/2026-W47.json", claimed_sha=remote.TEST_SHA256)
+        code, output, _seen = _serve({path: (200, altered)}, argv=["--zkouska"], controlled_date="2026-11-23")
+        self.assertEqual(output.strip(), "odmitnuto neocekavany_obsah")
+        self.assertNotIn("Zkušební", output)
+        previous_actions = os.environ.get("GITHUB_ACTIONS")
+        previous_today = os.environ.get("NOVINKY_TEST_TODAY")
+        os.environ["GITHUB_ACTIONS"] = "true"
+        os.environ["NOVINKY_TEST_TODAY"] = "2026-11-23"
+        try:
+            self.assertEqual(checks.processing_date(), checks._prague_today())
+            with self.assertRaises(checks.CheckError) as caught:
+                checks.assess_distribution_test(test_bytes(), today=ACCEPTED_DAY)
+            self.assertEqual(str(caught.exception), "datum přehledu je v budoucnosti")
+        finally:
+            if previous_actions is None:
+                os.environ.pop("GITHUB_ACTIONS", None)
+            else:
+                os.environ["GITHUB_ACTIONS"] = previous_actions
+            if previous_today is None:
+                os.environ.pop("NOVINKY_TEST_TODAY", None)
+            else:
+                os.environ["NOVINKY_TEST_TODAY"] = previous_today
+        os.environ["NOVINKY_TEST_TODAY"] = "1999-01-01"
+        try:
+            self.assertEqual(checks.processing_date(), date(1999, 1, 1))
+        finally:
+            os.environ.pop("NOVINKY_TEST_TODAY", None)
 
     def test_missing_file_redirect_invalid_and_absent_token(self):
         path = "/repos/jindravlada/manazer-bozp-prijem/contents/prijem/2026-W47.json?ref=main"
@@ -199,7 +331,10 @@ class SeparatedIntakeTests(unittest.TestCase):
 
     def test_valid_remote_file_and_oversize_do_not_leak(self):
         path = "/repos/jindravlada/manazer-bozp-prijem/contents/prijem/2026-W47.json?ref=main"
-        code, output, _seen = _serve({path: (200, github_file(dump(envelope("2026-W47")), "2026-W47"))})
+        code, output, _seen = _serve(
+            {path: (200, github_file(dump(envelope("2026-W47")), f"prijem/{'2026-W47'}.json"))},
+            controlled_date="2026-11-23",
+        )
         self.assertEqual(code, 0)
         self.assertEqual(output.strip(), "overeno 2026-W47 polozek 1 nepublikovano")
         self.assertNotIn("Zkušební text", output)
@@ -218,23 +353,56 @@ class SeparatedIntakeTests(unittest.TestCase):
         self.assertNotIn("schedule:", text)
         self.assertNotIn("pull_request", text)
         self.assertNotIn("pages:", text)
+        self.assertNotIn("--zkouska", text)
+        trial = TEST_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", trial)
+        self.assertIn("environment: prijem-cteni", trial)
+        self.assertEqual(trial.count("secrets.PRIJEM_READ_TOKEN"), 1)
+        self.assertIn("contents: read", trial)
+        self.assertIn("python3 nastroje/overit_vzdaleny_prijem.py --zkouska", trial)
+        self.assertNotIn("contents: write", trial)
+        self.assertNotIn("schedule:", trial)
+        self.assertNotIn("pull_request", trial)
+        self.assertNotIn("workflow_dispatch:\n    inputs:", trial)
+        self.assertNotIn("sha:", trial)
+        self.assertNotIn(remote.TEST_SHA256, trial)
 
 
 def _leaks(output: str) -> bool:
     return TOKEN in output or "Bearer " in output
 
 
-def _run(channel_root: Path, base: str, drop_token: bool = False) -> tuple[int, str]:
+def _run(
+    channel_root: Path,
+    base: str,
+    drop_token: bool = False,
+    argv: list[str] | None = None,
+    controlled_date: str | None = None,
+    actions: bool = False,
+) -> tuple[int, str]:
     env = {
         key: value
         for key, value in os.environ.items()
-        if key not in {"PRIJEM_READ_TOKEN", "GITHUB_TOKEN", "GITHUB_ACTIONS", "GITHUB_REF", "NOVINKY_TOKEN_TEST_API"}
+        if key not in {
+            "PRIJEM_READ_TOKEN",
+            "GITHUB_TOKEN",
+            "GITHUB_ACTIONS",
+            "GITHUB_REF",
+            "NOVINKY_TOKEN_TEST_API",
+            "NOVINKY_TEST_TODAY",
+            "PRIJEM_PROSTOR",
+        }
     }
     env["NOVINKY_TOKEN_TEST_API"] = base
     if not drop_token:
         env["PRIJEM_READ_TOKEN"] = TOKEN
+    if controlled_date is not None:
+        env["NOVINKY_TEST_TODAY"] = controlled_date
+    if actions:
+        env["GITHUB_ACTIONS"] = "true"
+        env["GITHUB_REF"] = "refs/heads/main"
     completed = subprocess.run(
-        [sys.executable, str(SCRIPT)],
+        [sys.executable, str(SCRIPT), *(argv or [])],
         check=False,
         capture_output=True,
         text=True,
@@ -247,7 +415,12 @@ def _run(channel_root: Path, base: str, drop_token: bool = False) -> tuple[int, 
     return completed.returncode, output
 
 
-def _serve(routes: dict[str, tuple[int, bytes]]) -> tuple[int, str, list[str]]:
+def _serve(
+    routes: dict[str, tuple[int, bytes]],
+    argv: list[str] | None = None,
+    controlled_date: str | None = None,
+    actions: bool = False,
+) -> tuple[int, str, list[str]]:
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     server.routes = routes
     server.expected_token = TOKEN
@@ -263,7 +436,13 @@ def _serve(routes: dict[str, tuple[int, bytes]]) -> tuple[int, str, list[str]]:
     copy_public(channel_root)
     try:
         base = f"http://127.0.0.1:{server.server_address[1]}"
-        code, output = _run(channel_root, base)
+        code, output = _run(
+            channel_root,
+            base,
+            argv=argv,
+            controlled_date=controlled_date,
+            actions=actions,
+        )
         if server.bad_auth or server.token_in_path or server.posts:
             raise AssertionError("autorizace, cesta nebo zapis nesplnuji ocekavani")
         if (channel_root / "prehledy" / "2026-W47.json").exists():

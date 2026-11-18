@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
 import os
 import re
 import ssl
@@ -16,6 +17,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import date
 from pathlib import Path
 
 import overeni_prenosu as checks
@@ -25,6 +27,11 @@ OWNER = "jindravlada"
 INTAKE = "manazer-bozp-prijem"
 HTTP_LIMIT = 400_000
 API_VERSION = "2022-11-28"
+TEST_REF = "zkouska-cteni"
+TEST_PATH = "zkouska/2026-W47.json"
+TEST_WEEK = "2026-W47"
+# Otisk je součástí tohoto souboru. Ze stažené odpovědi se nepřebírá.
+TEST_SHA256 = "4d3e305d0a3e0cfa3348ba258993b1fca43c0e0ee224f919e9c8bc301d4724ef"
 EXACT_REASONS = {
     "poškozený JSON": "poskozeny_json",
     "data za koncem JSON": "poskozeny_json",
@@ -47,6 +54,10 @@ EXACT_REASONS = {
     "předaný přehled není podepsaný a nesmí být označen jako důvěryhodný": "struktura",
     "nadměrný přehled": "nadmerne",
     "původní text se při převodu změnil": "struktura",
+    "testovaci prehled nelze publikovat": "testovaci",
+    "neplatný příznak testu": "testovaci",
+    "datum přehledu je v budoucnosti": "budouci_datum",
+    "neplatné zkušební datum": "datum",
 }
 
 
@@ -72,15 +83,32 @@ def map_reason(message: str) -> str:
     return "struktura"
 
 
-def document_url(base: str, week_id: str) -> str:
-    if checks.WEEK_ID_PATTERN.fullmatch(week_id) is None:
-        raise checks.CheckError("neplatný identifikátor týdne")
+def selected_space(argv: list[str]) -> str:
+    if not argv:
+        return "prijem"
+    if argv == ["--zkouska"]:
+        return "zkouska"
+    raise RemoteReject("prostor")
+
+
+def _api_base_or_reject(base: str) -> None:
     parsed = urllib.parse.urlparse(base)
     if parsed.username or parsed.password or parsed.scheme not in {"https", "http"}:
         raise RemoteReject("api")
     if base != token_probe.API_PRODUCTION and parsed.hostname not in {"127.0.0.1", "localhost"}:
         raise RemoteReject("api")
+
+
+def document_url(base: str, week_id: str) -> str:
+    if checks.WEEK_ID_PATTERN.fullmatch(week_id) is None:
+        raise checks.CheckError("neplatný identifikátor týdne")
+    _api_base_or_reject(base)
     return f"{base}/repos/{OWNER}/{INTAKE}/contents/prijem/{week_id}.json?ref=main"
+
+
+def test_document_url(base: str) -> str:
+    _api_base_or_reject(base)
+    return f"{base}/repos/{OWNER}/{INTAKE}/contents/{TEST_PATH}?ref={TEST_REF}"
 
 
 def _week_names(root: Path) -> tuple[str, ...]:
@@ -99,11 +127,11 @@ def _relation(week_id: str, root: Path, expected: str) -> str | None:
     return None
 
 
-def check_bytes(root: Path, raw: bytes, expected: str) -> tuple[int, str]:
+def check_bytes(root: Path, raw: bytes, expected: str, *, today: date | None = None) -> tuple[int, str]:
     if len(raw) > checks.MAX_DOCUMENT:
         return 1, "odmitnuto nadmerne"
     try:
-        document = checks.examine(raw)
+        document = checks.examine(raw, today=today)
         relation = _relation(document["id"], root, expected)
         if relation:
             return 1, f"odmitnuto {relation}"
@@ -112,7 +140,24 @@ def check_bytes(root: Path, raw: bytes, expected: str) -> tuple[int, str]:
     return 0, f"overeno {document['id']} polozek {len(document['items'])} nepublikovano"
 
 
-def decode_github_file(body: bytes, week_id: str) -> bytes:
+def check_test_bytes(root: Path, raw: bytes, *, today: date | None = None) -> tuple[int, str]:
+    if len(raw) > checks.MAX_DOCUMENT:
+        return 1, "odmitnuto nadmerne"
+    if hashlib.sha256(raw).hexdigest() != TEST_SHA256:
+        return 1, "odmitnuto neocekavany_obsah"
+    try:
+        verdict = checks.assess_distribution_test(raw, today=today)
+        if verdict.publishable or verdict.week_id != TEST_WEEK:
+            return 1, "odmitnuto testovaci"
+        relation = _relation(verdict.week_id, root, checks.expected_week(root))
+        if relation:
+            return 1, f"odmitnuto {relation}"
+    except checks.CheckError as exc:
+        return 1, "odmitnuto " + map_reason(str(exc))
+    return 0, f"overeno {verdict.week_id} polozek {verdict.item_count} nepublikovano"
+
+
+def decode_github_file(body: bytes, expected_path: str) -> bytes:
     if len(body) > HTTP_LIMIT:
         raise RemoteReject("nadmerne")
     try:
@@ -124,7 +169,7 @@ def decode_github_file(body: bytes, week_id: str) -> bytes:
     for key in ("type", "encoding", "size", "content", "path"):
         if key not in payload:
             raise RemoteReject("struktura")
-    if payload["type"] != "file" or payload["path"] != f"prijem/{week_id}.json":
+    if payload["type"] != "file" or payload["path"] != expected_path:
         raise RemoteReject("cesta")
     if payload["encoding"] != "base64":
         raise RemoteReject("nadmerne")
@@ -184,7 +229,12 @@ def http_code(status: int | None) -> str:
     return "http_jine"
 
 
-def run(root: Path) -> int:
+def run(root: Path, argv: list[str] | None = None) -> int:
+    try:
+        space = selected_space([] if argv is None else argv)
+    except RemoteReject as exc:
+        token_probe.emit(f"odmitnuto {exc.code}")
+        return 1
     token = os.environ.get("PRIJEM_READ_TOKEN", "").strip()
     verdict = token_probe.branch_guard(token)
     if verdict is not None:
@@ -199,8 +249,14 @@ def run(root: Path) -> int:
     try:
         try:
             base = token_probe.resolve_api_base()
-            week_id = checks.expected_week(root)
-            url = document_url(base, week_id)
+            if space == "zkouska":
+                week_id = TEST_WEEK
+                expected_path = TEST_PATH
+                url = test_document_url(base)
+            else:
+                week_id = checks.expected_week(root)
+                expected_path = f"prijem/{week_id}.json"
+                url = document_url(base, week_id)
         except RemoteReject as exc:
             token_probe.emit(f"odmitnuto {exc.code}")
             return 1
@@ -221,11 +277,14 @@ def run(root: Path) -> int:
             token_probe.emit(f"odmitnuto {http_code(status)}")
             return 1
         try:
-            raw = decode_github_file(body, week_id)
+            raw = decode_github_file(body, expected_path)
         except RemoteReject as exc:
             token_probe.emit(f"odmitnuto {exc.code}")
             return 1
-        code, line = check_bytes(root, raw, week_id)
+        if space == "zkouska":
+            code, line = check_test_bytes(root, raw)
+        else:
+            code, line = check_bytes(root, raw, week_id)
         token_probe.emit(line)
     finally:
         changed = (root / "index.json").read_bytes() != index_before or _week_names(root) != weeks_before
@@ -236,7 +295,7 @@ def run(root: Path) -> int:
 
 
 def main() -> int:
-    return run(Path(".").resolve())
+    return run(Path(".").resolve(), sys.argv[1:])
 
 
 if __name__ == "__main__":
