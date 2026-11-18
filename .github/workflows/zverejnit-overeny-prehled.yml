@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     outputs:
       publikovano: ${{ steps.zapis.outputs.publikovano }}
     steps:

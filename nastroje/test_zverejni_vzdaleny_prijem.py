@@ -158,6 +158,10 @@ class RemotePublishTests(unittest.TestCase):
     def test_worktree_guard_and_workflow_stay_narrow(self):
         self.assertEqual(job.classify_worktree([]), "beze_zmeny")
         self.assertEqual(
+            job.classify_worktree(["?? nastroje/__pycache__/zverejni_vzdaleny_prijem.cpython-313.pyc"]),
+            "beze_zmeny",
+        )
+        self.assertEqual(
             job.classify_worktree([" M index.json", "?? prehledy/2026-W47.json"]),
             "2026-W47",
         )
@@ -173,6 +177,7 @@ class RemotePublishTests(unittest.TestCase):
         self.assertEqual(text.count("contents: write"), 1)
         self.assertEqual(text.count("pages: write"), 1)
         self.assertIn("git push --ff-only origin HEAD:main", text)
+        self.assertIn('PYTHONDONTWRITEBYTECODE: "1"', text)
         self.assertIn("publikovano == 'ano'", text)
         self.assertNotIn("generuj_prehled", text)
         self.assertNotIn("--force", text)

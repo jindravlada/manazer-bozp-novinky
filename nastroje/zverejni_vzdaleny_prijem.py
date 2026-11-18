@@ -31,6 +31,8 @@ def classify_worktree(lines: list[str]) -> str:
             raise publisher.PublishError("zapis")
         status = line[:2]
         path = line[3:]
+        if "/__pycache__/" in f"/{path}" or path.endswith(".pyc"):
+            continue
         if path in found:
             raise publisher.PublishError("zapis")
         found[path] = status
