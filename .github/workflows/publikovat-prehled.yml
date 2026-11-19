@@ -1,14 +1,10 @@
-name: Publikovat fiktivní přehled
+name: Zkontrolovat kanál novinek
 
-# Plán je pondělí 8:15 v Europe/Prague. Osmá hodina nepadá do přechodu
-# CET/CEST. Minuta 15 snižuje riziko, že GitHub úlohu na začátku hodiny zahodí.
-# Když by se časové pásmo ignorovalo, stejný cron znamená pondělí 8:15 UTC,
-# tedy až po 8:00 českého času.
+# Plánované fiktivní generování je vypnuté. Pondělní cron 15 8 * * 1
+# v Europe/Prague se nesmí sám zapnout. Zveřejnění ověřeného týdne řeší
+# samostatný workflow a tento soubor ho nespouští.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "15 8 * * 1"
-      timezone: Europe/Prague
 
 permissions:
   contents: read
@@ -29,9 +25,6 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-
-      - name: Vytvořit chybějící fiktivní přehled
-        run: python3 nastroje/generuj_prehled.py --root .
 
       - name: Ověřit kanál
         run: python3 nastroje/generuj_prehled.py --root . --check-only

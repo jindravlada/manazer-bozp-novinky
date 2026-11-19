@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 import unittest
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -74,37 +74,38 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual((self.channel / "index.json").read_bytes(), self.original_index)
         self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
 
-    def test_new_fictional_week_is_added_once_and_hashes_match(self) -> None:
-        first = generator.generate(self.channel, today=date(2026, 11, 23))
-        self.assertEqual(first, "zapsano 2026-W47")
-        created = self.channel / "prehledy" / "2026-W47.json"
-        raw = created.read_bytes()
-        payload = json.loads(raw)
-        self.assertTrue(payload["items"][0]["title"].startswith("Fiktivní testovací záznam"))
-        self.assertEqual(payload["issued_at"], "2026-11-23")
-        self.assertIn("smyšlený", payload["items"][0]["text"])
-        self.assertEqual(payload["ai_notice"], generator.AI_NOTICE)
-        self.assertIn("example.com", payload["items"][0]["source"]["url"])
-        index = json.loads((self.channel / "index.json").read_text(encoding="utf-8"))
-        self.assertEqual(index["sequence"], 2)
-        entry = next(item for item in index["reviews"] if item["id"] == "2026-W47")
-        self.assertEqual(entry["sha256"], hashlib.sha256(raw).hexdigest())
+    def test_missing_week_is_not_created(self) -> None:
+        with self.assertRaises(generator.ChannelError) as caught:
+            generator.generate(self.channel, today=date(2026, 11, 23))
+        self.assertIn("vypnuté", str(caught.exception))
+        self.assertIn("2026-W47", str(caught.exception))
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
+        self.assertEqual((self.channel / "index.json").read_bytes(), self.original_index)
         self.assertEqual(
             (self.channel / "prehledy" / "2026-W46.json").read_bytes(),
             self.original_w46,
         )
-        second = generator.generate(self.channel, today=date(2026, 11, 23))
-        self.assertEqual(second, "beze_zmeny")
-        self.assertEqual(created.read_bytes(), raw)
-        self.assertEqual(json.loads((self.channel / "index.json").read_text())["sequence"], 2)
+        with self.assertRaises(generator.ChannelError):
+            generator._write_week(
+                self.channel,
+                "2026-W47",
+                date(2026, 11, 16),
+                date(2026, 11, 22),
+                date(2026, 11, 23),
+            )
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
+        draft = generator._fictional_review(
+            "2026-W47",
+            date(2026, 11, 16),
+            date(2026, 11, 22),
+            date(2026, 11, 23),
+        )
+        self.assertIn(generator.FICTIONAL_MARK, json.dumps(draft).casefold())
 
     def test_overwrite_is_disabled_and_keeps_existing_bytes(self) -> None:
-        generator.generate(self.channel, today=date(2026, 11, 23))
-        week_path = self.channel / "prehledy" / "2026-W47.json"
-        before = week_path.read_bytes()
         with self.assertRaises(generator.ChannelError):
             generator.generate(self.channel, today=date(2026, 11, 24), overwrite=True)
-        self.assertEqual(week_path.read_bytes(), before)
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
         completed = subprocess.run(
             [
                 sys.executable,
@@ -121,18 +122,19 @@ class GeneratorTest(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 1)
         self.assertIn("zakázán", completed.stderr)
-        self.assertEqual(week_path.read_bytes(), before)
+        self.assertEqual(
+            (self.channel / "prehledy" / "2026-W46.json").read_bytes(),
+            self.original_w46,
+        )
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
 
-    def test_missed_run_catches_up_without_skipping_a_week(self) -> None:
-        result = generator.generate(self.channel, today=date(2026, 11, 30))
-        self.assertEqual(result, "zapsano 2026-W47,2026-W48")
-        week_47 = json.loads((self.channel / "prehledy" / "2026-W47.json").read_text())
-        week_48 = json.loads((self.channel / "prehledy" / "2026-W48.json").read_text())
-        self.assertEqual(week_47["issued_at"], "2026-11-23")
-        self.assertEqual(week_48["issued_at"], "2026-11-30")
-        index = json.loads((self.channel / "index.json").read_text(encoding="utf-8"))
-        self.assertEqual(index["sequence"], 3)
-        self.assertEqual(index["issued_at"], "2026-11-30")
+    def test_missed_run_does_not_create_weeks(self) -> None:
+        with self.assertRaises(generator.ChannelError) as caught:
+            generator.generate(self.channel, today=date(2026, 11, 30))
+        self.assertIn("2026-W47,2026-W48", str(caught.exception))
+        self.assertFalse((self.channel / "prehledy" / "2026-W47.json").exists())
+        self.assertFalse((self.channel / "prehledy" / "2026-W48.json").exists())
+        self.assertEqual((self.channel / "index.json").read_bytes(), self.original_index)
 
     def test_sha_mismatch_is_rejected(self) -> None:
         index_path = self.channel / "index.json"
@@ -167,22 +169,93 @@ class GeneratorTest(unittest.TestCase):
         )
         shutil.rmtree(site)
 
-    def test_generated_week_passes_existing_client(self) -> None:
-        sys.path.insert(0, str(CLIENT_DIR))
-        import novinky_client as client
+    def test_real_review_passes_and_invalid_review_is_rejected(self) -> None:
+        repo_before = (
+            (ROOT / "index.json").read_bytes(),
+            (ROOT / "prehledy" / "2026-W45.json").read_bytes(),
+            (ROOT / "prehledy" / "2026-W46.json").read_bytes(),
+        )
+        week_id = "2026-W41"
+        start, end = generator._iso_bounds(week_id)
+        title = "Hlášení pracovního úrazu"
+        text = "Záznam o úrazu se podává ve stanovené lhůtě."
+        practical = "Evidence úrazů má odlišit ohlášení a záznam."
+        recommendation = "Ověřte postup v oficiálním zdroji SÚIP."
+        url = "https://suip.gov.cz/hlaseni-pracovniho-urazu"
+        document = {
+            "format": generator.FORMAT_REVIEW,
+            "format_version": 1,
+            "id": week_id,
+            "issued_at": (end + timedelta(days=1)).isoformat(),
+            "period": {"start": start.isoformat(), "end": end.isoformat()},
+            "status": "novinky",
+            "ai_notice": generator.AI_NOTICE,
+            "content_markdown": "\n".join(
+                [
+                    f"## {title}",
+                    "",
+                    text,
+                    "",
+                    practical,
+                    "",
+                    recommendation,
+                    "",
+                    url,
+                ]
+            ),
+            "items": [
+                {
+                    "id": f"{week_id}-001",
+                    "category": "ostatni",
+                    "title": title,
+                    "text": text,
+                    "source": {
+                        "name": "Státní úřad inspekce práce",
+                        "url": url,
+                        "published_at": start.isoformat(),
+                    },
+                    "effective_at": None,
+                    "practical_meaning": practical,
+                    "recommendation": recommendation,
+                }
+            ],
+        }
+        raw = json.dumps(document, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
+        self.assertNotIn("fiktiv", raw.decode("utf-8").casefold())
+        (self.channel / "prehledy" / f"{week_id}.json").write_bytes(raw)
+        index_path = self.channel / "index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["reviews"].insert(
+            0,
+            {
+                "id": week_id,
+                "issued_at": document["issued_at"],
+                "period_start": start.isoformat(),
+                "period_end": end.isoformat(),
+                "file": f"prehledy/{week_id}.json",
+                "sha256": hashlib.sha256(raw).hexdigest(),
+            },
+        )
+        index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+        generator.verify_channel(self.channel)
 
-        generator.generate(self.channel, today=date(2026, 11, 23))
-        index_raw = (self.channel / "index.json").read_bytes()
-        index = client.parse_index_bytes(index_raw)
-        self.assertEqual(index.sequence, 2)
-        self.assertIn("2026-W47", [item.id for item in index.reviews])
-        week_raw = (self.channel / "prehledy" / "2026-W47.json").read_bytes()
-        review = client.parse_review_bytes(week_raw)
-        self.assertEqual(review.id, "2026-W47")
-        self.assertEqual(review.status, "novinky")
-        self.assertEqual(client.AI_NOTICE, generator.AI_NOTICE)
-        ref = next(item for item in index.reviews if item.id == "2026-W47")
-        self.assertEqual(hashlib.sha256(week_raw).hexdigest(), ref.sha256)
+        document["items"][0]["source"]["url"] = "http://suip.gov.cz/hlaseni-pracovniho-urazu"
+        document["content_markdown"] = document["content_markdown"].replace("https://", "http://", 1)
+        bad = json.dumps(document, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
+        (self.channel / "prehledy" / f"{week_id}.json").write_bytes(bad)
+        index["reviews"][0]["sha256"] = hashlib.sha256(bad).hexdigest()
+        index_path.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+        with self.assertRaises(generator.ChannelError) as caught:
+            generator.verify_channel(self.channel)
+        self.assertIn("https", str(caught.exception))
+        self.assertEqual(
+            (
+                (ROOT / "index.json").read_bytes(),
+                (ROOT / "prehledy" / "2026-W45.json").read_bytes(),
+                (ROOT / "prehledy" / "2026-W46.json").read_bytes(),
+            ),
+            repo_before,
+        )
 
     def test_cli_does_not_overwrite_without_flag(self) -> None:
         completed = subprocess.run(
@@ -224,8 +297,17 @@ class GeneratorTest(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("workflow_dispatch:", workflow)
-        self.assertIn('cron: "15 8 * * 1"', workflow)
-        self.assertIn("timezone: Europe/Prague", workflow)
+        self.assertNotIn("schedule:", workflow)
+        self.assertNotIn("cron:", workflow)
+        self.assertNotIn("Vytvořit chybějící fiktivní přehled", workflow)
+        for line in workflow.splitlines():
+            if "generuj_prehled.py" in line:
+                self.assertTrue("--check-only" in line or "--export-site" in line, line)
+        verified = (ROOT / ".github" / "workflows" / "zverejnit-overeny-prehled.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('cron: "15 9-17 * * 1"', verified)
+        self.assertIn("zverejni_vzdaleny_prijem.py", verified)
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertIn("git rebase --abort", workflow)
         self.assertNotIn("--force", workflow)

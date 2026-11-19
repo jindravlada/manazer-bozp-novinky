@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Vytvoří nejvýše jeden fiktivní týdenní přehled a ověří kanál.
+"""Ověří kanál novinek a drží fiktivní generátor vypnutý.
 
-Skript je určený jen pro repozitář manazer-bozp-novinky. Nevytváří skutečné
-odborné informace a existující týden nikdy nepřepisuje.
+Ověření platného přehledu nevyžaduje slovo „fiktivní“. Fiktivní zkušební
+zápis je oddělený a sám se nespustí. Existující týden se nepřepisuje.
 """
 
 from __future__ import annotations
@@ -80,20 +80,19 @@ def generate(
     today: date,
     overwrite: bool = False,
 ) -> str:
-    """Doplní chybějící uzavřené týdny. Vrátí „beze_zmeny“ nebo „zapsano ID“."""
+    """Nic nezapisuje. Chybějící týden je chyba, ne podnět k vygenerování."""
     if overwrite:
         raise ChannelError("přepis existujícího přehledu je v této fázi zakázán")
     root = root.resolve()
     verify_channel(root)
     existing = {path.stem for path in (root / "prehledy").glob("*.json")}
-    written: list[str] = []
-    for week_id, start, end in missing_completed_weeks(today, existing):
-        if _write_week(root, week_id, start, end, today):
-            written.append(week_id)
-    verify_channel(root)
-    if not written:
-        return "beze_zmeny"
-    return "zapsano " + ",".join(written)
+    missing = [week_id for week_id, _, _ in missing_completed_weeks(today, existing)]
+    if missing:
+        raise ChannelError(
+            "automatické fiktivní generování je vypnuté a chybějící týden se nezapíše: "
+            + ",".join(missing)
+        )
+    return "beze_zmeny"
 
 
 def missing_completed_weeks(
@@ -118,28 +117,9 @@ def missing_completed_weeks(
 
 
 def _write_week(root: Path, week_id: str, start: date, end: date, today: date) -> bool:
-    issued_at = end + timedelta(days=1)
-    document = _fictional_review(week_id, start, end, issued_at)
-    raw = _dump(document)
-    digest = hashlib.sha256(raw).hexdigest()
-    ref = {
-        "id": week_id,
-        "issued_at": issued_at.isoformat(),
-        "period_start": start.isoformat(),
-        "period_end": end.isoformat(),
-        "file": f"prehledy/{week_id}.json",
-        "sha256": digest,
-    }
-    _verify_review(raw, ref)
-    if FICTIONAL_MARK not in raw.decode("utf-8").lower():
-        raise ChannelError("generátor by zapsal přehled bez fiktivního označení")
-    target = _within(root, root / "prehledy" / f"{week_id}.json")
-    if target.exists() and target.read_bytes() == raw:
-        return False
-    target.parent.mkdir(parents=True, exist_ok=True)
-    _atomic_write(target, raw)
-    _upsert_index(root, ref, today)
-    return True
+    """Fiktivní zápis je oddělený od ověření a zůstává vypnutý."""
+    del root, week_id, start, end, today
+    raise ChannelError("automatické fiktivní generování je vypnuté a chybějící týden se nezapíše")
 
 
 def verify_channel(root: Path) -> None:
@@ -180,8 +160,6 @@ def verify_channel(root: Path) -> None:
         digest = hashlib.sha256(raw).hexdigest()
         if digest != ref["sha256"]:
             raise ChannelError(f"otisk nesouhlasí: {ref['id']}")
-        if FICTIONAL_MARK not in raw.decode("utf-8").lower():
-            raise ChannelError(f"přehled nemá fiktivní označení: {ref['id']}")
         _verify_review(raw, ref)
     if ids != sorted(ids) or len(ids) != len(set(ids)):
         raise ChannelError("přehledy nejsou jednoznačně seřazené")
@@ -208,8 +186,9 @@ def export_site(root: Path, destination: Path) -> None:
 
 
 def _fictional_review(week_id: str, start: date, end: date, issued_at: date) -> dict:
+    """Šablona zkušebního týdne. Ověření kanálu ji nepoužívá a samo ji nezapíše."""
     published = start + timedelta(days=2)
-    return {
+    document = {
         "format": FORMAT_REVIEW,
         "format_version": FORMAT_VERSION,
         "id": week_id,
@@ -244,6 +223,9 @@ def _fictional_review(week_id: str, start: date, end: date, issued_at: date) -> 
             }
         ],
     }
+    if FICTIONAL_MARK not in _dump(document).decode("utf-8").lower():
+        raise ChannelError("generátor by zapsal přehled bez fiktivního označení")
+    return document
 
 
 def _upsert_index(root: Path, ref: dict, today: date) -> None:
@@ -281,7 +263,12 @@ def _verify_review(raw: bytes, ref: dict) -> None:
     }
     if status == "bez_podstatnych_novinek":
         required.add("summary")
-    _expect(document, required)
+    _expect(document, required, optional={"content_markdown"})
+    markdown = document.get("content_markdown")
+    if markdown is not None:
+        _text(markdown, 20_000, True, "content_markdown")
+        _reject_active_content(markdown)
+        _require_https_urls(markdown)
     if document["format"] != FORMAT_REVIEW or document["format_version"] != FORMAT_VERSION:
         raise ChannelError("neznámý týdenní přehled")
     if document["id"] != ref["id"]:
@@ -309,12 +296,16 @@ def _verify_review(raw: bytes, ref: dict) -> None:
         if items:
             raise ChannelError("prázdný týden nesmí obsahovat položky")
         _text(document["summary"], 1000, True, "summary")
+        if markdown is not None and document["summary"] not in markdown:
+            raise ChannelError("souhrn není v původním přehledu")
         return
     if status != "novinky" or not items or len(items) > 30:
         raise ChannelError("neplatný stav nebo počet položek")
     seen: set[str] = set()
     for item in items:
         item_id = _verify_item(item, week_id=ref["id"], start=start, end=end, issued_at=issued_at)
+        if markdown is not None:
+            _require_projection(item, markdown)
         if item_id in seen:
             raise ChannelError("duplicitní identifikátor položky")
         seen.add(item_id)
@@ -405,12 +396,36 @@ def _text(value: object, max_len: int, multiline: bool, field: str) -> str:
     return value
 
 
-def _expect(value: object, required: set[str]) -> dict:
+def _reject_active_content(value: str) -> None:
+    lowered = value.casefold()
+    if "<script" in lowered or "<iframe" in lowered or "javascript:" in lowered:
+        raise ChannelError("přehled obsahuje nepovolený aktivní obsah")
+
+
+def _require_https_urls(value: str) -> None:
+    if "http://" in value.casefold():
+        raise ChannelError("odkaz musí být https")
+    for url in re.findall(r"https://[^\s)<>\]]+", value):
+        _https_url(url.rstrip(".,;"))
+
+
+def _require_projection(item: dict, markdown: str) -> None:
+    for field in ("title", "practical_meaning", "recommendation"):
+        if item[field] not in markdown:
+            raise ChannelError("strukturovaný text není v původním přehledu")
+    if item["source"]["url"] not in markdown:
+        raise ChannelError("odkaz položky není v původním přehledu")
+
+
+def _expect(value: object, required: set[str], optional: set[str] | None = None) -> dict:
     if type(value) is not dict:
         raise ChannelError("očekáván objekt JSON")
-    if set(value) != required:
+    allowed = set(required)
+    if optional:
+        allowed.update(optional)
+    if not required <= set(value) or not set(value) <= allowed:
         missing = required - set(value)
-        extra = set(value) - required
+        extra = set(value) - allowed
         detail = ", ".join(sorted(missing or extra))
         raise ChannelError(f"neočekávaná nebo chybějící pole: {detail}")
     return value
@@ -474,7 +489,7 @@ def _within(root: Path, path: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Fiktivní týdenní přehled zkušebního kanálu")
+    parser = argparse.ArgumentParser(description="Kontrola kanálu novinek bez generování")
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--today", type=date.fromisoformat)
     parser.add_argument("--overwrite", action="store_true")
