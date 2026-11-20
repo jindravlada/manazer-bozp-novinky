@@ -1,0 +1,29 @@
+{
+  "format": "manazer-bozp-novinky-prehled",
+  "format_version": 1,
+  "id": "2026-W44",
+  "issued_at": "2026-11-02",
+  "period": {
+    "start": "2026-10-26",
+    "end": "2026-11-01"
+  },
+  "status": "novinky",
+  "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "content_markdown": "# Přehled BOZP 2026-10-26 až 2026-11-01\n\n## Program Bezpečný podnik připomíná význam systémového řízení BOZP\n\nPodle zprávy BOZPinfo převzalo 27. října 2026 osvědčení Bezpečný podnik 21 společností. Ocenění podporuje začlenění BOZP do systému řízení podniku; nepředstavuje nový právní požadavek.\n\nZdroj: BOZPinfo (2026-10-29)\nhttps://www.bozpinfo.cz/aktuality/prestizni-osvedceni-bezpecny-podnik-prevzalo-nove-21-spolecnosti\n\nPraktický význam: Využít systémové řízení rizik, zapojení vedení a kontrolní činnosti jako příklad dobré praxe.\n\nManažer BOZP – návrh k posouzení: Pro auditní metodiku případně zvážit inspiraci kritérii programu; změna aplikace není nutná.\n\nTento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "items": [
+    {
+      "id": "2026-W44-001",
+      "category": "ostatni",
+      "title": "Program Bezpečný podnik připomíná význam systémového řízení BOZP",
+      "text": "Podle zprávy BOZPinfo převzalo 27. října 2026 osvědčení Bezpečný podnik 21 společností. Ocenění podporuje začlenění BOZP do systému řízení podniku; nepředstavuje nový právní požadavek.",
+      "source": {
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/aktuality/prestizni-osvedceni-bezpecny-podnik-prevzalo-nove-21-spolecnosti",
+        "published_at": "2026-10-29"
+      },
+      "effective_at": null,
+      "practical_meaning": "Využít systémové řízení rizik, zapojení vedení a kontrolní činnosti jako příklad dobré praxe.",
+      "recommendation": "Pro auditní metodiku případně zvážit inspiraci kritérii programu; změna aplikace není nutná."
+    }
+  ]
+}
