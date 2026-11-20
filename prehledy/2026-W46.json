@@ -9,34 +9,35 @@
   },
   "status": "novinky",
   "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "content_markdown": "# Přehled BOZP 2026-11-09 až 2026-11-15\n\n## Revize vyhrazených technických zařízení a běžné kontroly\n\nBOZPinfo upozorňuje na rozdíly mezi revizí vyhrazeného technického zařízení a pravidelnou kontrolou ostatních zařízení. Režim a četnost úkonů se liší podle druhu zařízení, dokumentace a příslušných předpisů.\n\nZdroj: BOZPinfo (2026-11-13)\nhttps://www.bozpinfo.cz/tematicke-okruhy/prispevek/revize-vyhrazenych-technickych-zarizeni-prehledne\n\nPraktický význam: Nepoužívat pojem revize pro každou kontrolu spotřebiče či nářadí a správně stanovovat termíny.\n\nManažer BOZP – návrh k posouzení: V periodických činnostech a auditních šablonách případně rozlišit revizi, kontrolu, prohlídku a zkoušku.\n\n## BOZP u OSVČ a praktické zkušenosti inspekce práce\n\nZpráva o workshopu k pracovní úrazovosti OSVČ upozorňuje na podceňování konkrétních pracovních rizik a nedostatky v evidenci a hlášení úrazů. Zmiňuje také elektronické postupy podle nařízení vlády č. 322/2025 Sb.\n\nZdroj: BOZPinfo (2026-11-12)\nhttps://www.bozpinfo.cz/tematicke-okruhy/prispevek/pracovni-urazovost-a-dodrzovani-pravidel-bozp-ze-strany-osvc\n\nPraktický význam: Při spolupráci s OSVČ ověřovat konkrétní vyhodnocení rizik a plnění povinností souvisejících s úrazy.\n\nManažer BOZP – návrh k posouzení: V Manažeru BOZP případně prověřit podporu komunikace a předávání informací s externími pracovníky.\n\nTento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
   "items": [
     {
       "id": "2026-W46-001",
-      "category": "pravni_predpis",
-      "title": "Fiktivní záznam: zkušební vyhláška č. 9999/2026 Sb.",
-      "text": "Tento záznam je smyšlený a slouží jen k technické zkoušce stažení. Žádná taková vyhláška neexistuje a nezakládá žádnou povinnost.",
+      "category": "metodicky_pokyn",
+      "title": "Revize vyhrazených technických zařízení a běžné kontroly",
+      "text": "BOZPinfo upozorňuje na rozdíly mezi revizí vyhrazeného technického zařízení a pravidelnou kontrolou ostatních zařízení. Režim a četnost úkonů se liší podle druhu zařízení, dokumentace a příslušných předpisů.",
       "source": {
-        "name": "Fiktivní zdroj pro technickou zkoušku",
-        "url": "https://example.com/manazer-bozp-novinky/fiktivni-zdroj",
-        "published_at": "2026-11-12"
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/tematicke-okruhy/prispevek/revize-vyhrazenych-technickych-zarizeni-prehledne",
+        "published_at": "2026-11-13"
       },
-      "effective_at": "2027-01-01",
-      "practical_meaning": "V ostrém přehledu by zde byl praktický dopad na evidenci BOZP. V této zkoušce jde jen o ověření datového formátu.",
-      "recommendation": "Nic nezavádějte. Údaj není skutečná povinnost a nemá se promítnout do dokumentace."
+      "effective_at": null,
+      "practical_meaning": "Nepoužívat pojem revize pro každou kontrolu spotřebiče či nářadí a správně stanovovat termíny.",
+      "recommendation": "V periodických činnostech a auditních šablonách případně rozlišit revizi, kontrolu, prohlídku a zkoušku."
     },
     {
       "id": "2026-W46-002",
       "category": "metodicky_pokyn",
-      "title": "Fiktivní záznam: zkušební metodický pokyn",
-      "text": "Druhý smyšlený záznam ověřuje položku bez data účinnosti. Není to metodika ministerstva ani jiného úřadu.",
+      "title": "BOZP u OSVČ a praktické zkušenosti inspekce práce",
+      "text": "Zpráva o workshopu k pracovní úrazovosti OSVČ upozorňuje na podceňování konkrétních pracovních rizik a nedostatky v evidenci a hlášení úrazů. Zmiňuje také elektronické postupy podle nařízení vlády č. 322/2025 Sb.",
       "source": {
-        "name": "Fiktivní zdroj pro technickou zkoušku",
-        "url": "https://example.com/manazer-bozp-novinky/fiktivni-pokyn",
-        "published_at": "2026-11-13"
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/tematicke-okruhy/prispevek/pracovni-urazovost-a-dodrzovani-pravidel-bozp-ze-strany-osvc",
+        "published_at": "2026-11-12"
       },
       "effective_at": null,
-      "practical_meaning": "Datum účinnosti se uvádí jen tehdy, když je u zdroje skutečně stanovené. Zde záměrně chybí.",
-      "recommendation": "Položku nepoužívejte jako podklad pro školení, kontrolu ani úpravu místního předpisu."
+      "practical_meaning": "Při spolupráci s OSVČ ověřovat konkrétní vyhodnocení rizik a plnění povinností souvisejících s úrazy.",
+      "recommendation": "V Manažeru BOZP případně prověřit podporu komunikace a předávání informací s externími pracovníky."
     }
   ]
 }

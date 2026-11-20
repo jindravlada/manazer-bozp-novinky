@@ -7,8 +7,23 @@
     "start": "2026-11-02",
     "end": "2026-11-08"
   },
-  "status": "bez_podstatnych_novinek",
-  "summary": "Ve sledovaném období nebyly zjištěny žádné podstatné novinky. Jde o fiktivní zkušební záznam, ne o skutečné zjištění.",
+  "status": "novinky",
   "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
-  "items": []
+  "content_markdown": "# Přehled BOZP 2026-11-02 až 2026-11-08\n\n## Zádržný a záchytný systém proti pádu nejsou totéž\n\nOdborný materiál BOZPinfo rozlišuje zádržný systém, který nepustí pracovníka k nebezpečnému okraji, a systém zachycení pádu. Při návrhu je nutno zohlednit kotvení, volnou hloubku, kyvadlový pád a možnost rychlé záchrany.\n\nZdroj: BOZPinfo (2026-11-05)\nhttps://www.bozpinfo.cz/tematicke-okruhy/prispevek/zadrzny-nebo-zachytny-system-rozdil-ktery-muze-zachranit-zivot\n\nPraktický význam: Při přípravě práce ve výškách hodnotit funkci celého systému ochrany a plán záchrany, nejen přítomnost postroje.\n\nManažer BOZP – návrh k posouzení: Do šablon prověrek a auditů případně zahrnout správný druh systému, kotvení a záchranný postup.\n\nTento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "items": [
+    {
+      "id": "2026-W45-001",
+      "category": "metodicky_pokyn",
+      "title": "Zádržný a záchytný systém proti pádu nejsou totéž",
+      "text": "Odborný materiál BOZPinfo rozlišuje zádržný systém, který nepustí pracovníka k nebezpečnému okraji, a systém zachycení pádu. Při návrhu je nutno zohlednit kotvení, volnou hloubku, kyvadlový pád a možnost rychlé záchrany.",
+      "source": {
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/tematicke-okruhy/prispevek/zadrzny-nebo-zachytny-system-rozdil-ktery-muze-zachranit-zivot",
+        "published_at": "2026-11-05"
+      },
+      "effective_at": null,
+      "practical_meaning": "Při přípravě práce ve výškách hodnotit funkci celého systému ochrany a plán záchrany, nejen přítomnost postroje.",
+      "recommendation": "Do šablon prověrek a auditů případně zahrnout správný druh systému, kotvení a záchranný postup."
+    }
+  ]
 }

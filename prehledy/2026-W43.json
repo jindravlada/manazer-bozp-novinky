@@ -1,0 +1,29 @@
+{
+  "format": "manazer-bozp-novinky-prehled",
+  "format_version": 1,
+  "id": "2026-W43",
+  "issued_at": "2026-10-26",
+  "period": {
+    "start": "2026-10-19",
+    "end": "2026-10-25"
+  },
+  "status": "novinky",
+  "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "content_markdown": "# Přehled BOZP 2026-10-19 až 2026-10-25\n\n## Prevence šikany, násilí a obtěžování na pracovišti\n\nBOZPinfo v rámci Evropského týdne BOZP připomíná, že psychická a fyzická bezpečnost zaměstnanců zahrnuje i prevenci ponižování, šikany, výhrůžek a obtěžování ze strany kolegů či klientů. Důležité jsou srozumitelné postupy hlášení a reakce.\n\nZdroj: BOZPinfo (2026-10-22)\nhttps://www.bozpinfo.cz/aktuality/nasili-sikana-a-obtezovani-bezpecna-prace-zacina-respektem\n\nPraktický význam: Zkontrolovat organizační opatření, bezpečné kanály hlášení a podporu zaměstnanců.\n\nManažer BOZP – návrh k posouzení: V registru rizik a kontrolních otázkách zvážit psychosociální rizika a jejich prevenci.\n\nTento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "items": [
+    {
+      "id": "2026-W43-001",
+      "category": "metodicky_pokyn",
+      "title": "Prevence šikany, násilí a obtěžování na pracovišti",
+      "text": "BOZPinfo v rámci Evropského týdne BOZP připomíná, že psychická a fyzická bezpečnost zaměstnanců zahrnuje i prevenci ponižování, šikany, výhrůžek a obtěžování ze strany kolegů či klientů. Důležité jsou srozumitelné postupy hlášení a reakce.",
+      "source": {
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/aktuality/nasili-sikana-a-obtezovani-bezpecna-prace-zacina-respektem",
+        "published_at": "2026-10-22"
+      },
+      "effective_at": null,
+      "practical_meaning": "Zkontrolovat organizační opatření, bezpečné kanály hlášení a podporu zaměstnanců.",
+      "recommendation": "V registru rizik a kontrolních otázkách zvážit psychosociální rizika a jejich prevenci."
+    }
+  ]
+}
