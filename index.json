@@ -2,17 +2,49 @@
   "format": "manazer-bozp-novinky-index",
   "format_version": 1,
   "feed": "manazer-bozp-novinky",
-  "sequence": 1,
-  "issued_at": "2026-11-16",
-  "expires_at": "2027-02-14",
+  "sequence": 2,
+  "issued_at": "2026-11-20",
+  "expires_at": "2027-02-18",
   "reviews": [
+    {
+      "id": "2026-W41",
+      "issued_at": "2026-10-12",
+      "period_start": "2026-10-05",
+      "period_end": "2026-10-11",
+      "file": "prehledy/2026-W41.json",
+      "sha256": "275ddeaa25fbfddda2ef0bf3635845d7f3f484a89df2220cc1ce0fc88130ae42"
+    },
+    {
+      "id": "2026-W42",
+      "issued_at": "2026-10-19",
+      "period_start": "2026-10-12",
+      "period_end": "2026-10-18",
+      "file": "prehledy/2026-W42.json",
+      "sha256": "6d53f56562db5fbcb85e07608872f4bb941f669a43c10178e74d730267193c62"
+    },
+    {
+      "id": "2026-W43",
+      "issued_at": "2026-10-26",
+      "period_start": "2026-10-19",
+      "period_end": "2026-10-25",
+      "file": "prehledy/2026-W43.json",
+      "sha256": "40b91559f621f8ade5491da0e1fc6e7a0c9441b8af11b643066437b087219592"
+    },
+    {
+      "id": "2026-W44",
+      "issued_at": "2026-11-02",
+      "period_start": "2026-10-26",
+      "period_end": "2026-11-01",
+      "file": "prehledy/2026-W44.json",
+      "sha256": "c11c4ef70ec7b7a43c1d661b683a0627d7e36be3a057254f6a235ad18fc2e7dc"
+    },
     {
       "id": "2026-W45",
       "issued_at": "2026-11-09",
       "period_start": "2026-11-02",
       "period_end": "2026-11-08",
       "file": "prehledy/2026-W45.json",
-      "sha256": "e103b0fccffd4996936696b34737032d6476fa39fb0066eb8117ebab36216b24"
+      "sha256": "7923ab0dca5a586bf6e161b80b79810ec624cec0b8dfec0c39f318976deee480"
     },
     {
       "id": "2026-W46",
@@ -20,7 +52,7 @@
       "period_start": "2026-11-09",
       "period_end": "2026-11-15",
       "file": "prehledy/2026-W46.json",
-      "sha256": "ee09bef9d61ed9fc1f2afd23f07d1913bbe2656baf435b370294f601057204b3"
+      "sha256": "03dfd0252b95b84795a56bd02388283f6f97d6769965fb001faf35b82ebd34ac"
     }
   ]
 }
