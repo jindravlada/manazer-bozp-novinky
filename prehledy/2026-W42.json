@@ -1,0 +1,43 @@
+{
+  "format": "manazer-bozp-novinky-prehled",
+  "format_version": 1,
+  "id": "2026-W42",
+  "issued_at": "2026-10-19",
+  "period": {
+    "start": "2026-10-12",
+    "end": "2026-10-18"
+  },
+  "status": "novinky",
+  "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "content_markdown": "# Přehled BOZP 2026-10-12 až 2026-10-18\n\n## Zdravotní dotazník k pracovnělékařské prohlídce patří lékaři\n\nVýklad BOZPinfo uvádí, že zaměstnavatel nemá automaticky shromažďovat diagnózy, zdravotní historii či rodinnou anamnézu. Lékař obdrží informace nezbytné k posouzení a zaměstnavatel posudkový závěr.\n\nZdroj: BOZPinfo (2026-10-13)\nhttps://www.bozpinfo.cz/tematicke-okruhy/prispevek/pracovnelekarska-prohlidka-a-dotaznik-obsahujici-prilis-osobni-s-vykonem-prace-nesouvisejici-informa\n\nPraktický význam: Prověřit formuláře, žádosti o prohlídky a nakládání se zdravotními údaji.\n\nManažer BOZP – návrh k posouzení: V Manažeru BOZP zkontrolovat, zda evidence neuchovává nadbytečnou zdravotní anamnézu.\n\n## EU-OSHA zahájila kampaň k duševnímu zdraví při práci\n\nDne 13. října 2026 byla zahájena kampaň Zdravé pracoviště 2026–2028: Společně za duševní zdraví při práci. Jde o osvětovou a metodickou iniciativu, nikoli o nový právní předpis.\n\nZdroj: EU-OSHA (2026-10-13)\nhttps://healthy-workplaces.osha.europa.eu/en/media-centre/events/healthy-workplaces-campaign-launch-together-mental-health-work\n\nPraktický význam: Zohlednit psychosociální rizika při hodnocení práce a organizace pracovních podmínek.\n\nManažer BOZP – návrh k posouzení: V registru rizik a auditních otázkách případně prověřit pokrytí psychosociálních faktorů.\n\nTento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "items": [
+    {
+      "id": "2026-W42-001",
+      "category": "metodicky_pokyn",
+      "title": "Zdravotní dotazník k pracovnělékařské prohlídce patří lékaři",
+      "text": "Výklad BOZPinfo uvádí, že zaměstnavatel nemá automaticky shromažďovat diagnózy, zdravotní historii či rodinnou anamnézu. Lékař obdrží informace nezbytné k posouzení a zaměstnavatel posudkový závěr.",
+      "source": {
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/tematicke-okruhy/prispevek/pracovnelekarska-prohlidka-a-dotaznik-obsahujici-prilis-osobni-s-vykonem-prace-nesouvisejici-informa",
+        "published_at": "2026-10-13"
+      },
+      "effective_at": null,
+      "practical_meaning": "Prověřit formuláře, žádosti o prohlídky a nakládání se zdravotními údaji.",
+      "recommendation": "V Manažeru BOZP zkontrolovat, zda evidence neuchovává nadbytečnou zdravotní anamnézu."
+    },
+    {
+      "id": "2026-W42-002",
+      "category": "metodicky_pokyn",
+      "title": "EU-OSHA zahájila kampaň k duševnímu zdraví při práci",
+      "text": "Dne 13. října 2026 byla zahájena kampaň Zdravé pracoviště 2026–2028: Společně za duševní zdraví při práci. Jde o osvětovou a metodickou iniciativu, nikoli o nový právní předpis.",
+      "source": {
+        "name": "EU-OSHA",
+        "url": "https://healthy-workplaces.osha.europa.eu/en/media-centre/events/healthy-workplaces-campaign-launch-together-mental-health-work",
+        "published_at": "2026-10-13"
+      },
+      "effective_at": null,
+      "practical_meaning": "Zohlednit psychosociální rizika při hodnocení práce a organizace pracovních podmínek.",
+      "recommendation": "V registru rizik a auditních otázkách případně prověřit pokrytí psychosociálních faktorů."
+    }
+  ]
+}
