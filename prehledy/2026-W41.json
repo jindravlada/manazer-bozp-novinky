@@ -1,0 +1,43 @@
+{
+  "format": "manazer-bozp-novinky-prehled",
+  "format_version": 1,
+  "id": "2026-W41",
+  "issued_at": "2026-10-12",
+  "period": {
+    "start": "2026-10-05",
+    "end": "2026-10-11"
+  },
+  "status": "novinky",
+  "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "content_markdown": "# Přehled BOZP 2026-10-05 až 2026-10-11\n\n## Krácení odškodnění pracovního úrazu vyžaduje konkrétní důkazy\n\nObecný odkaz na porušení BOZP nestačí ke krácení náhrady po pracovním úrazu. Podle výkladu je třeba prokázat konkrétní porušení a jeho příčinný podíl na úrazu.\n\nZdroj: BOZPinfo (2026-10-07)\nhttps://www.bozpinfo.cz/tematicke-okruhy/prispevek/dopravni-nehoda-v-cizine-a-s-ni-souvisejici-kraceni-odskodneni-za-pracovni-uraz\n\nPraktický význam: Při vyšetřování shromažďovat konkrétní důkazy a rozlišovat zjištění od domněnek.\n\nManažer BOZP – návrh k posouzení: V Manažeru BOZP případně ověřit možnost zaznamenat důvod krácení, podklady a příčinnou souvislost.\n\n## Školení samo o sobě neprokazuje soustavné vyžadování BOZP\n\nRozbor rozhodnutí Nejvyššího soudu připomíná, že zaměstnavatel má znalost a dodržování předpisů průběžně vyžadovat a kontrolovat přiměřeně konkrétním rizikům a provozním podmínkám. Nejde o povinnost nepřetržitého dohledu.\n\nZdroj: BOZPinfo (2026-10-09)\nhttps://www.bozpinfo.cz/tematicke-okruhy/prispevek/soudy-resily-zprosteni-povinnosti-zamestnavatele-nahradit-skodu-pri-pracovnim-urazu\n\nPraktický význam: Vést doklady nejen o školení, ale i o reálné kontrolní činnosti.\n\nManažer BOZP – návrh k posouzení: V šetření úrazů a auditech zvážit ověřování praxe kontrol BOZP a její dokumentace.\n\nTento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "items": [
+    {
+      "id": "2026-W41-001",
+      "category": "metodicky_pokyn",
+      "title": "Krácení odškodnění pracovního úrazu vyžaduje konkrétní důkazy",
+      "text": "Obecný odkaz na porušení BOZP nestačí ke krácení náhrady po pracovním úrazu. Podle výkladu je třeba prokázat konkrétní porušení a jeho příčinný podíl na úrazu.",
+      "source": {
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/tematicke-okruhy/prispevek/dopravni-nehoda-v-cizine-a-s-ni-souvisejici-kraceni-odskodneni-za-pracovni-uraz",
+        "published_at": "2026-10-07"
+      },
+      "effective_at": null,
+      "practical_meaning": "Při vyšetřování shromažďovat konkrétní důkazy a rozlišovat zjištění od domněnek.",
+      "recommendation": "V Manažeru BOZP případně ověřit možnost zaznamenat důvod krácení, podklady a příčinnou souvislost."
+    },
+    {
+      "id": "2026-W41-002",
+      "category": "metodicky_pokyn",
+      "title": "Školení samo o sobě neprokazuje soustavné vyžadování BOZP",
+      "text": "Rozbor rozhodnutí Nejvyššího soudu připomíná, že zaměstnavatel má znalost a dodržování předpisů průběžně vyžadovat a kontrolovat přiměřeně konkrétním rizikům a provozním podmínkám. Nejde o povinnost nepřetržitého dohledu.",
+      "source": {
+        "name": "BOZPinfo",
+        "url": "https://www.bozpinfo.cz/tematicke-okruhy/prispevek/soudy-resily-zprosteni-povinnosti-zamestnavatele-nahradit-skodu-pri-pracovnim-urazu",
+        "published_at": "2026-10-09"
+      },
+      "effective_at": null,
+      "practical_meaning": "Vést doklady nejen o školení, ale i o reálné kontrolní činnosti.",
+      "recommendation": "V šetření úrazů a auditech zvážit ověřování praxe kontrol BOZP a její dokumentace."
+    }
+  ]
+}
