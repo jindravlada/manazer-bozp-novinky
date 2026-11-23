@@ -30,9 +30,13 @@ REAL_DAY = date(2026, 11, 18)
 TOKEN = "github_pat_lokalni_zkouska"
 CANARY = "SOUKROMY_TEXT_NEVYPISOVAT"
 PUBLISHED = {
-    "index.json": "665aa2bf2bd0c072fb07d33e6de680bb721f62964613486b64beff1ea0505839",
-    "prehledy/2026-W45.json": "e103b0fccffd4996936696b34737032d6476fa39fb0066eb8117ebab36216b24",
-    "prehledy/2026-W46.json": "ee09bef9d61ed9fc1f2afd23f07d1913bbe2656baf435b370294f601057204b3",
+    "index.json": "658f06388c536db8afd004742a1be6dafb75592b097e468aa2c81bb56127218b",
+    "prehledy/2026-W41.json": "275ddeaa25fbfddda2ef0bf3635845d7f3f484a89df2220cc1ce0fc88130ae42",
+    "prehledy/2026-W42.json": "6d53f56562db5fbcb85e07608872f4bb941f669a43c10178e74d730267193c62",
+    "prehledy/2026-W43.json": "40b91559f621f8ade5491da0e1fc6e7a0c9441b8af11b643066437b087219592",
+    "prehledy/2026-W44.json": "c11c4ef70ec7b7a43c1d661b683a0627d7e36be3a057254f6a235ad18fc2e7dc",
+    "prehledy/2026-W45.json": "7923ab0dca5a586bf6e161b80b79810ec624cec0b8dfec0c39f318976deee480",
+    "prehledy/2026-W46.json": "03dfd0252b95b84795a56bd02388283f6f97d6769965fb001faf35b82ebd34ac",
 }
 
 
@@ -362,8 +366,13 @@ class SeparatedIntakeTests(unittest.TestCase):
         os.environ["NOVINKY_TEST_TODAY"] = "2026-11-23"
         try:
             self.assertEqual(checks.processing_date(), checks._prague_today())
+            tomorrow = (checks._prague_today() + timedelta(days=1)).isoformat()
+            future = json.dumps(
+                test_payload(source_run_date=tomorrow),
+                ensure_ascii=False,
+            ).encode("utf-8")
             with self.assertRaises(checks.CheckError) as caught:
-                checks.assess_distribution_test(test_bytes(), today=ACCEPTED_DAY)
+                checks.assess_distribution_test(future, today=ACCEPTED_DAY)
             self.assertEqual(str(caught.exception), "datum přehledu je v budoucnosti")
         finally:
             if previous_actions is None:

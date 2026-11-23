@@ -8,7 +8,7 @@ import os
 import shutil
 import sys
 import unittest
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -58,13 +58,16 @@ class PublishTests(unittest.TestCase):
         self.assertTrue(stored.is_file())
         self.assertNotIn(b"distribution_test", stored.read_bytes())
         index = json.loads((self.channel / "index.json").read_text(encoding="utf-8"))
-        self.assertEqual(index["sequence"], 2)
+        before = json.loads(self.before_index)
+        self.assertEqual(index["sequence"], before["sequence"] + 1)
         self.assertEqual(index["issued_at"], "2026-11-23")
         self.assertEqual(index["expires_at"], "2027-02-21")
-        self.assertEqual([item["id"] for item in index["reviews"]], ["2026-W45", "2026-W46", "2026-W47"])
-        self.assertEqual(index["reviews"][0], json.loads(self.before_index)["reviews"][0])
-        self.assertEqual(index["reviews"][1], json.loads(self.before_index)["reviews"][1])
-        self.assertEqual(index["reviews"][2]["sha256"], hashlib.sha256(stored.read_bytes()).hexdigest())
+        self.assertEqual(
+            [item["id"] for item in index["reviews"]],
+            [item["id"] for item in before["reviews"]] + ["2026-W47"],
+        )
+        self.assertEqual(index["reviews"][:-1], before["reviews"])
+        self.assertEqual(index["reviews"][-1]["sha256"], hashlib.sha256(stored.read_bytes()).hexdigest())
         for name, content in self.before_weeks.items():
             self.assertEqual((self.channel / "prehledy" / name).read_bytes(), content)
         confirmed = checks.examine(stored.read_bytes(), today=ACCEPTED_DAY)
@@ -126,7 +129,11 @@ class PublishTests(unittest.TestCase):
         self.assertFalse(any(self.channel.rglob("*.tmp")))
 
     def test_actions_clock_and_transfer_envelope_keep_guards(self):
-        raw = json.dumps(remote_tests.finished_week(), ensure_ascii=False).encode("utf-8")
+        tomorrow = (checks._prague_today() + timedelta(days=1)).isoformat()
+        raw = json.dumps(
+            remote_tests.finished_week(issued_at=tomorrow),
+            ensure_ascii=False,
+        ).encode("utf-8")
         previous = os.environ.get("GITHUB_ACTIONS")
         os.environ["GITHUB_ACTIONS"] = "true"
         try:

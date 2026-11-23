@@ -8,7 +8,7 @@ name: Zveřejnit ověřený přehled
 on:
   workflow_dispatch:
   schedule:
-    - cron: "15 9-17 * * 1"
+    - cron: "15 9,10,11,12,13,14,15,16,17 * * 1"
       timezone: Europe/Prague
 
 permissions:
@@ -67,7 +67,11 @@ jobs:
             echo "odmitnuto soubezna_zmena"
             exit 1
           fi
-          git push --ff-only origin HEAD:main
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "odmitnuto soubezna_zmena"
+            exit 1
+          fi
+          git push origin HEAD:main
           mkdir -p "$RUNNER_TEMP/site/prehledy"
           cp -- index.json index.html .nojekyll "$RUNNER_TEMP/site/"
           cp -- prehledy/*.json "$RUNNER_TEMP/site/prehledy/"

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import threading
 import unittest
+from datetime import timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -95,11 +96,12 @@ class RemotePublishTests(unittest.TestCase):
         self.assertEqual(seen, [PATH_W47])
         stored = (self.channel / "prehledy" / "2026-W47.json").read_bytes()
         self.assertNotIn(b"distribution_test", stored)
-        for name in ("2026-W45.json", "2026-W46.json"):
-            self.assertEqual(
-                hashlib.sha256((self.channel / "prehledy" / name).read_bytes()).hexdigest(),
-                fixtures.PUBLISHED[f"prehledy/{name}"],
-            )
+        for name, digest in fixtures.PUBLISHED.items():
+            if name.startswith("prehledy/"):
+                self.assertEqual(
+                    hashlib.sha256((self.channel / name).read_bytes()).hexdigest(),
+                    digest,
+                )
 
         next_path = "/repos/jindravlada/manazer-bozp-prijem/contents/prijem/2026-W48.json?ref=main"
         code, output, seen = self._serve({next_path: (404, b"{}")}, controlled_date="2026-11-30")
@@ -137,10 +139,14 @@ class RemotePublishTests(unittest.TestCase):
         os.environ["NOVINKY_TEST_TODAY"] = ACCEPTED_DAY
         try:
             self.assertIsNone(job._test_clock())
+            tomorrow = (publisher._clock(None) + timedelta(days=1)).isoformat()
             with self.assertRaises(publisher.checks.CheckError) as caught:
                 publisher.publish_verified(
                     self.channel,
-                    json.dumps(fixtures.finished_week(), ensure_ascii=False).encode("utf-8"),
+                    json.dumps(
+                        fixtures.finished_week(issued_at=tomorrow),
+                        ensure_ascii=False,
+                    ).encode("utf-8"),
                     today=job._test_clock(),
                 )
             self.assertEqual(str(caught.exception), "datum přehledu je v budoucnosti")
@@ -171,13 +177,17 @@ class RemotePublishTests(unittest.TestCase):
             job.classify_worktree([" M prehledy/2026-W45.json", "?? prehledy/2026-W47.json"])
         text = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", text)
-        self.assertIn('cron: "15 9-17 * * 1"', text)
+        self.assertIn('cron: "15 9,10,11,12,13,14,15,16,17 * * 1"', text)
         self.assertIn("timezone: Europe/Prague", text)
         self.assertIn("environment: prijem-cteni", text)
         self.assertEqual(text.count("secrets.PRIJEM_READ_TOKEN"), 1)
         self.assertEqual(text.count("contents: write"), 1)
         self.assertEqual(text.count("pages: write"), 1)
-        self.assertIn("git push --ff-only origin HEAD:main", text)
+        self.assertIn("git push origin HEAD:main", text)
+        self.assertNotIn("--ff-only", text)
+        self.assertIn("git merge-base --is-ancestor origin/main HEAD", text)
+        self.assertIn('git rev-parse HEAD^', text)
+        self.assertNotIn("+HEAD", text)
         self.assertIn('PYTHONDONTWRITEBYTECODE: "1"', text)
         self.assertIn("publikovano == 'ano'", text)
         self.assertNotIn("generuj_prehled", text)

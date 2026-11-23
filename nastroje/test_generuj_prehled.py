@@ -157,14 +157,14 @@ class GeneratorTest(unittest.TestCase):
         site = self.channel.parent / f"{self.channel.name}-site"
         generator.export_site(self.channel, site)
         names = sorted(path.relative_to(site).as_posix() for path in site.rglob("*") if path.is_file())
+        weeks = sorted(path.name for path in (self.channel / "prehledy").glob("*.json"))
         self.assertEqual(
             names,
             [
                 ".nojekyll",
                 "index.html",
                 "index.json",
-                "prehledy/2026-W45.json",
-                "prehledy/2026-W46.json",
+                *[f"prehledy/{name}" for name in weeks],
             ],
         )
         shutil.rmtree(site)
@@ -175,7 +175,7 @@ class GeneratorTest(unittest.TestCase):
             (ROOT / "prehledy" / "2026-W45.json").read_bytes(),
             (ROOT / "prehledy" / "2026-W46.json").read_bytes(),
         )
-        week_id = "2026-W41"
+        week_id = "2026-W40"
         start, end = generator._iso_bounds(week_id)
         title = "Hlášení pracovního úrazu"
         text = "Záznam o úrazu se podává ve stanovené lhůtě."
@@ -306,7 +306,7 @@ class GeneratorTest(unittest.TestCase):
         verified = (ROOT / ".github" / "workflows" / "zverejnit-overeny-prehled.yml").read_text(
             encoding="utf-8"
         )
-        self.assertIn('cron: "15 9-17 * * 1"', verified)
+        self.assertIn('cron: "15 9,10,11,12,13,14,15,16,17 * * 1"', verified)
         self.assertIn("zverejni_vzdaleny_prijem.py", verified)
         self.assertIn("cancel-in-progress: false", workflow)
         self.assertIn("git rebase --abort", workflow)
