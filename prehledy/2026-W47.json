@@ -1,0 +1,29 @@
+{
+  "format": "manazer-bozp-novinky-prehled",
+  "format_version": 1,
+  "id": "2026-W47",
+  "issued_at": "2026-11-23",
+  "period": {
+    "start": "2026-11-16",
+    "end": "2026-11-22"
+  },
+  "status": "novinky",
+  "ai_notice": "Tento přehled byl vytvořen pomocí umělé inteligence. Může obsahovat nepřesnosti nebo opomenutí. Před použitím informací v praxi ověřte jejich správnost a aktuálnost v oficiálních zdrojích.",
+  "content_markdown": "# Přehled české BOZP za 16.–22. listopadu 2026\n\nV ověřených oficiálních zdrojích nebyla zjištěna nová ani nově účinná obecná právní povinnost v oblasti pracovních úrazů, interních auditů, prověrek nebo řízení rizik.\n\n## Kazuistika SÚIP: závažný úraz mladistvého při kácení stromů\n\n**Stav:** nezávazná metodická informace z kontrolní praxe; nejde o změnu právního předpisu.\n\n**Zveřejněno:** 16. 11. 2026.\n\n**Datum účinnosti:** není relevantní.\n\nSÚIP zveřejnil případ šestnáctiletého mladistvého, který bez pracovněprávního vztahu a odpovídajícího dohledu pracoval při těžbě dřeva, obsluhoval řetězovou pilu a utrpěl závažný úraz po pádu zavěšených kmenů. Jde o nezávaznou kazuistiku z kontrolní praxe, nikoli o nový právní předpis.\n\n**Oficiální zdroj:** https://suip.gov.cz/web/suip/vsechny-clanky/-/asset_publisher/BwIpyjT9IXe0/content/kazuistika-c-10-zavazny-uraz-mladistveho-pri-kaceni-stromu\n\n**Praktický význam:** Zaměstnavatel má před přidělením práce mladistvému ověřit její přípustnost, věk, zdravotní způsobilost, odborné vedení a dohled. Při šetření obdobné události je nutné posoudit také legálnost pracovního vztahu, zakázané práce, pracovní postup a zajištění ohroženého prostoru.\n\n**Dopad na aplikaci:** Manažer BOZP – návrh k posouzení: v metodice šetření úrazů a auditních šablonách ověřit otázky na věk postiženého, zakázané práce mladistvých, oprávnění k obsluze zařízení, odborný dohled a dodržení pracovního postupu. Nová funkce není nutná, pokud lze tyto skutečnosti evidovat ve stávajících modulech.\n\n## Legislativní kontrola\n\nV e-Sbírce byly ve sledovaném týdnu vyhlášeny předpisy č. 215/2026 Sb. a 217–219/2026 Sb.; podle jejich názvů a ověřeného předmětu nepřinášejí změnu sledovaných povinností BOZP. MPSV ani ČBÚ ve sledovaném období nezveřejnily podstatnou změnu v požadovaných oblastech.\n\n**Dříve vydaná významná změna právě nabývající účinnosti:** pro tento týden nebyla zjištěna.",
+  "items": [
+    {
+      "id": "2026-W47-001",
+      "category": "kontrolni_cinnost",
+      "title": "Kazuistika SÚIP: závažný úraz mladistvého při kácení stromů",
+      "text": "SÚIP zveřejnil případ šestnáctiletého mladistvého, který bez pracovněprávního vztahu a odpovídajícího dohledu pracoval při těžbě dřeva, obsluhoval řetězovou pilu a utrpěl závažný úraz po pádu zavěšených kmenů. Jde o nezávaznou kazuistiku z kontrolní praxe, nikoli o nový právní předpis.",
+      "source": {
+        "name": "Státní úřad inspekce práce",
+        "url": "https://suip.gov.cz/web/suip/vsechny-clanky/-/asset_publisher/BwIpyjT9IXe0/content/kazuistika-c-10-zavazny-uraz-mladistveho-pri-kaceni-stromu",
+        "published_at": "2026-11-16"
+      },
+      "effective_at": null,
+      "practical_meaning": "Zaměstnavatel má před přidělením práce mladistvému ověřit její přípustnost, věk, zdravotní způsobilost, odborné vedení a dohled. Při šetření obdobné události je nutné posoudit také legálnost pracovního vztahu, zakázané práce, pracovní postup a zajištění ohroženého prostoru.",
+      "recommendation": "Manažer BOZP – návrh k posouzení: v metodice šetření úrazů a auditních šablonách ověřit otázky na věk postiženého, zakázané práce mladistvých, oprávnění k obsluze zařízení, odborný dohled a dodržení pracovního postupu. Nová funkce není nutná, pokud lze tyto skutečnosti evidovat ve stávajících modulech."
+    }
+  ]
+}
